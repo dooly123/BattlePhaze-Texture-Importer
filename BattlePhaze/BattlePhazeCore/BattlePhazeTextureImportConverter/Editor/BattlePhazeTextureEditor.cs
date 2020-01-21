@@ -13,13 +13,16 @@ namespace BattlePhaze.TextureSystem.EditorUnity
         /// Textures Importer
         /// </summary>
         public List<TextureImporter> Textures = new List<TextureImporter>();
-        private Color32 PrimaryWhiteColor = new Color32(2, 135, 155, 255);
-        private Color32 SecondaryColor = new Color32(140, 140, 140, 255);
+        private Color32 DarkPrimaryColor = new Color32(140, 140, 140, 255);
+        private Color32 LightPrimaryColor = new Color32(80, 80, 80, 255);
+        private Color32 AccentColor = new Color32(252, 152, 103, 255);
+        private Color White = new Color32(255, 255, 255, 255);
         private GUIStyle TextStyling;
         private GUIStyle TextLargeStyling;
         private GUIStyle StyleButton;
         private GUIStyle EnumStyling;
-        private bool rerun;
+        private bool? rerun = false;
+
         /// <summary>
         /// Texture Max Size
         /// </summary>
@@ -58,7 +61,10 @@ namespace BattlePhaze.TextureSystem.EditorUnity
             {
                 UIDesign();
             }
+            Color oldColor = GUI.backgroundColor;
+            GUI.backgroundColor = LightPrimaryColor;
             GUILayout.Label("BattlePhaze Texture Importer", TextLargeStyling);
+            GUI.backgroundColor = oldColor;
             EditorGUILayout.BeginHorizontal();
             GUILayout.Label("Mip Maps", TextStyling);
             MipMapEnabled = EditorGUILayout.Toggle(MipMapEnabled);
@@ -81,10 +87,12 @@ namespace BattlePhaze.TextureSystem.EditorUnity
             GUILayout.Label("Texture Compression", TextStyling);
             TextureCompression = (TextureImporterCompression)EditorGUILayout.EnumPopup(TextureCompression, EnumStyling);
             GUILayout.EndVertical();
+            GUI.backgroundColor = AccentColor;
             if (GUILayout.Button("Run Texture Import",StyleButton))
             {
                 TextureConvert();
             }
+            GUI.backgroundColor = oldColor;
         }
         /// <summary>
         /// Texture Convert
@@ -164,41 +172,35 @@ namespace BattlePhaze.TextureSystem.EditorUnity
         public void UIDesign()
         {
             rerun = true;
+            bool darkmode = EditorGUIUtility.isProSkin;
+            Color32 PrimaryColor = darkmode ? DarkPrimaryColor : LightPrimaryColor;
             StyleButton = new GUIStyle(GUI.skin.button)
             {
                 alignment = TextAnchor.MiddleCenter,
-                fontSize = 15,
-                fontStyle = FontStyle.Bold
+                fontSize = 12,
             };
-            StyleButton.normal.background = SetColor(40, 40, new Color(15, 15, 15, 255));
-            StyleButton.normal.textColor = PrimaryWhiteColor;
-            TextStyling = new GUIStyle(GUI.skin.textArea)
+            StyleButton.normal.textColor = White;
+            TextStyling = new GUIStyle(GUI.skin.label)
             {
                 alignment = TextAnchor.MiddleLeft,
-                fontSize = 15,
-                fontStyle = FontStyle.Bold
+                fontSize = 11,
+                fontStyle = FontStyle.Normal,
+                stretchWidth = true,
+                fixedWidth = 200,
+                fixedHeight = 20,
+                clipping = TextClipping.Overflow
             };
-            TextStyling.fixedWidth = 300;
-            TextStyling.fixedHeight = 20;
-            TextStyling.normal.background = SetColor(2, 2, new Color(15, 15, 15, 255));
-            TextStyling.clipping = TextClipping.Overflow;
-            TextStyling.normal.textColor = PrimaryWhiteColor;
-            TextLargeStyling = new GUIStyle(GUI.skin.textArea)
-            {
-                alignment = TextAnchor.MiddleLeft,
-                fontSize = 25,
-                fontStyle = FontStyle.Bold
-            };
+            TextStyling.normal.textColor = PrimaryColor;
+            TextLargeStyling = EditorStyles.toolbar;
+            TextLargeStyling.alignment = TextAnchor.MiddleCenter;
+            TextLargeStyling.fontSize = 18;
+            TextLargeStyling.fontStyle = FontStyle.Bold;
+            TextLargeStyling.fixedHeight = 40;
+            TextLargeStyling.stretchWidth = true;
             TextLargeStyling.clipping = TextClipping.Overflow;
-            TextLargeStyling.normal.textColor = SecondaryColor;
-            EnumStyling = new GUIStyle(GUI.skin.button)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = 10,
-                fontStyle = FontStyle.Bold
-            };
-            EnumStyling.normal.background = SetColor(2, 2, new Color(15, 15, 15, 255));
-            EnumStyling.normal.textColor = PrimaryWhiteColor;
+            TextLargeStyling.normal.textColor = AccentColor;
+            EnumStyling = EditorStyles.popup;
+            EnumStyling.normal.textColor = PrimaryColor;
         }
         /// <summary>
         /// Used for setting a color of a Texture2D
