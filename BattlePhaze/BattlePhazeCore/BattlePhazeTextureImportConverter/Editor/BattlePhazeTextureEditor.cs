@@ -117,7 +117,7 @@ namespace BattlePhaze.TextureSystem.EditorUnity
                                         TextureIM.crunchedCompression = CrunchCompression;
                                         TextureIM.textureCompression = TextureCompression;
                                         TextureIM.mipmapEnabled = MipMapEnabled;
-                                        if (TextureIM.maxTextureSize >= TextureMaxSize)
+                                        if (TextureIM.maxTextureSize > TextureMaxSize)
                                         {
                                             TextureIM.maxTextureSize = TextureMaxSize;
                                         }
@@ -126,30 +126,28 @@ namespace BattlePhaze.TextureSystem.EditorUnity
                                     }
                                 }
 #else
-                                f(TextureIM.mipmapEnabled == MipMapEnabled && TextureIM.crunchedCompression == CrunchCompression && TextureIM.textureCompression == TextureCompression && TextureIM.streamingMipmaps == StreamingMipmaps)
-                                {
-                                }
-                                else
-                                {
-                                    TextureIM.crunchedCompression = CrunchCompression;
-                                    TextureIM.textureCompression = TextureCompression;
-                                    TextureIM.mipmapEnabled = MipMapEnabled;
-                                        if (TextureIM.maxTextureSize >= TextureMaxSize)
+                                    if (TextureIM.mipmapEnabled == MipMapEnabled && TextureIM.crunchedCompression == CrunchCompression && TextureIM.textureCompression == TextureCompression && TextureIM.streamingMipmaps == StreamingMipmaps)
+                                    {
+                                    }
+                                    else
+                                    {
+                                        TextureIM.crunchedCompression = CrunchCompression;
+                                        TextureIM.textureCompression = TextureCompression;
+                                        TextureIM.mipmapEnabled = MipMapEnabled;
+                                        if (TextureIM.maxTextureSize > TextureMaxSize)
                                         {
                                             TextureIM.maxTextureSize = TextureMaxSize;
                                         }
-                                    TextureIM.streamingMipmaps = StreamingMipmaps;
-                                    Textures.Add(TextureIM);
-
+                                        TextureIM.streamingMipmaps = StreamingMipmaps;
+                                        Textures.Add(TextureIM);
+                                    }
                                 }
-                            }
-                        }
-#endif
                             }
                         }
                     }
                 }
             }
+#endif
             foreach (TextureImporter Texture in Textures)
             {
                 if (Texture)
