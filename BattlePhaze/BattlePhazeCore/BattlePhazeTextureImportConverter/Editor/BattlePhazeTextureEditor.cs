@@ -142,12 +142,12 @@ namespace BattlePhaze.TextureSystem.EditorUnity
                                         Textures.Add(TextureIM);
                                     }
                                 }
+#endif
                             }
                         }
                     }
                 }
             }
-#endif
             foreach (TextureImporter Texture in Textures)
             {
                 if (Texture)
