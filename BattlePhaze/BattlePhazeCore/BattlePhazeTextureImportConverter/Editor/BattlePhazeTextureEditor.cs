@@ -13,6 +13,7 @@ namespace BattlePhaze.TextureSystem.EditorUnity
         /// Textures Importer
         /// </summary>
         public List<TextureImporter> Textures = new List<TextureImporter>();
+        public List<string> LightMapDirectories = new List<string>();
         private Color32 DarkPrimaryColor = new Color32(140, 140, 140, 255);
         private Color32 LightPrimaryColor = new Color32(80, 80, 80, 255);
         private Color32 AccentColor = new Color32(252, 152, 103, 255);
@@ -22,7 +23,6 @@ namespace BattlePhaze.TextureSystem.EditorUnity
         private GUIStyle StyleButton;
         private GUIStyle EnumStyling;
         private bool? rerun = false;
-
         /// <summary>
         /// Texture Max Size
         /// </summary>
@@ -88,11 +88,46 @@ namespace BattlePhaze.TextureSystem.EditorUnity
             TextureCompression = (TextureImporterCompression)EditorGUILayout.EnumPopup(TextureCompression, EnumStyling);
             GUILayout.EndVertical();
             GUI.backgroundColor = AccentColor;
-            if (GUILayout.Button("Run Texture Import",StyleButton))
+            if (GUILayout.Button("Convert Textures", StyleButton))
             {
+                IgnoreLightmaps();
                 TextureConvert();
             }
+            if (GUILayout.Button("Convert Skinned Mesh Renders Textures", StyleButton))
+            {
+                IgnoreLightmaps();
+                ConvertSkinnedMeshRenders();
+            }
+            if (GUILayout.Button("Convert Skybox [beta]", StyleButton))
+            {
+                IgnoreLightmaps();
+                SceneRender();
+            }
+            if (GUILayout.Button("Convert Particle System [Beta]", StyleButton))
+            {
+                ParticleConvert();
+            }
             GUI.backgroundColor = oldColor;
+        }
+        /// <summary>
+        /// Ignores Lightmaps
+        /// </summary>
+        public void IgnoreLightmaps()
+        {
+            LightMapDirectories.Clear();
+            for (int LightIndex = 0; LightIndex < LightmapSettings.lightmaps.Length; LightIndex++)
+            {
+                string path = AssetDatabase.GetAssetPath(LightmapSettings.lightmaps[LightIndex].lightmapColor);
+                if (path != "")
+                {
+                    LightMapDirectories.Add(path);
+                }
+                path = AssetDatabase.GetAssetPath(LightmapSettings.lightmaps[LightIndex].lightmapDir);
+                if (path != "")
+                {
+                    LightMapDirectories.Add(path);
+                }
+            }
         }
         /// <summary>
         /// Texture Convert
@@ -101,7 +136,6 @@ namespace BattlePhaze.TextureSystem.EditorUnity
         {
             Textures.Clear();
             MeshRenderer[] Renders = FindObjectsOfType<MeshRenderer>();
-            Debug.Log(Renders.Length);
             for (int RendersIndex = 0; RendersIndex < Renders.Length; RendersIndex++)
             {
                 foreach (Object obj in EditorUtility.CollectDependencies(new UnityEngine.Object[] { Renders[RendersIndex] }))
@@ -109,30 +143,44 @@ namespace BattlePhaze.TextureSystem.EditorUnity
                     if (obj is Texture)
                     {
                         string path = AssetDatabase.GetAssetPath(obj);
-                        if (AssetImporter.GetAtPath(path) is TextureImporter)
+                        bool wasexisting = true;
+                        for (int LightIndex = 0; LightIndex < LightMapDirectories.Count; LightIndex++)
                         {
-                            TextureImporter TextureIM = (TextureImporter)AssetImporter.GetAtPath(path);
-                            if (TextureIM)
+                            if (path == LightMapDirectories[LightIndex])
                             {
-                                if (!Textures.Contains(TextureIM))
+                                wasexisting = false;
+                            }
+                            if (path.Contains("BakeryLightmaps"))
+                            {
+                                wasexisting = false;
+                            }
+                        }
+                        if (wasexisting)
+                        {
+                            if (AssetImporter.GetAtPath(path) is TextureImporter)
+                            {
+                                TextureImporter TextureIM = (TextureImporter)AssetImporter.GetAtPath(path);
+                                if (TextureIM)
                                 {
+                                    if (!Textures.Contains(TextureIM))
+                                    {
 #if UNITY_2017
-                                    if (TextureIM.mipmapEnabled == MipMapEnabled && TextureIM.crunchedCompression == CrunchCompression && TextureIM.textureCompression == TextureCompression)
-                                    {
-                                    }
-                                    else
-                                    {
-                                        TextureIM.crunchedCompression = CrunchCompression;
-                                        TextureIM.textureCompression = TextureCompression;
-                                        TextureIM.mipmapEnabled = MipMapEnabled;
-                                        if (TextureIM.maxTextureSize > TextureMaxSize)
+                                        if (TextureIM.mipmapEnabled == MipMapEnabled && TextureIM.crunchedCompression == CrunchCompression && TextureIM.textureCompression == TextureCompression)
                                         {
-                                            TextureIM.maxTextureSize = TextureMaxSize;
                                         }
-                                        Textures.Add(TextureIM);
+                                        else
+                                        {
+                                            TextureIM.crunchedCompression = CrunchCompression;
+                                            TextureIM.textureCompression = TextureCompression;
+                                            TextureIM.mipmapEnabled = MipMapEnabled;
+                                            if (TextureIM.maxTextureSize > TextureMaxSize)
+                                            {
+                                                TextureIM.maxTextureSize = TextureMaxSize;
+                                            }
+                                         Textures.Add(TextureIM);
 
+                                        }
                                     }
-                                }
 #else
                                     if (TextureIM.mipmapEnabled == MipMapEnabled && TextureIM.crunchedCompression == CrunchCompression && TextureIM.textureCompression == TextureCompression && TextureIM.streamingMipmaps == StreamingMipmaps)
                                     {
@@ -151,11 +199,236 @@ namespace BattlePhaze.TextureSystem.EditorUnity
                                     }
                                 }
 #endif
+                                }
                             }
                         }
                     }
                 }
             }
+            TextureConvert(Textures.ToArray());
+            Textures.Clear();
+        }
+        public void ParticleConvert()
+        {
+            Textures.Clear();
+            ParticleSystem[] Particle = FindObjectsOfType<ParticleSystem>();
+            for (int ParticleIndex = 0; ParticleIndex < Particle.Length; ParticleIndex++)
+            {
+                foreach (Object obj in EditorUtility.CollectDependencies(new UnityEngine.Object[] { Particle[ParticleIndex] }))
+                {
+                    if (obj is Texture)
+                    {
+                        string path = AssetDatabase.GetAssetPath(obj);
+                        bool wasexisting = true;
+                        for (int LightIndex = 0; LightIndex < LightMapDirectories.Count; LightIndex++)
+                        {
+                            if (path == LightMapDirectories[LightIndex])
+                            {
+                                wasexisting = false;
+                            }
+                            if (path.Contains("BakeryLightmaps"))
+                            {
+                                wasexisting = false;
+                            }
+                        }
+                        if (wasexisting)
+                        {
+                            if (AssetImporter.GetAtPath(path) is TextureImporter)
+                            {
+                                TextureImporter TextureIM = (TextureImporter)AssetImporter.GetAtPath(path);
+                                if (TextureIM)
+                                {
+                                    if (!Textures.Contains(TextureIM))
+                                    {
+#if UNITY_2017
+                                        if (TextureIM.mipmapEnabled == MipMapEnabled && TextureIM.crunchedCompression == CrunchCompression && TextureIM.textureCompression == TextureCompression)
+                                        {
+                                        }
+                                        else
+                                        {
+                                            TextureIM.crunchedCompression = CrunchCompression;
+                                            TextureIM.textureCompression = TextureCompression;
+                                            TextureIM.mipmapEnabled = MipMapEnabled;
+                                            if (TextureIM.maxTextureSize > TextureMaxSize)
+                                            {
+                                                TextureIM.maxTextureSize = TextureMaxSize;
+                                            }
+                                            Textures.Add(TextureIM);
+
+                                        }
+                                    }
+#else
+                                    if (TextureIM.mipmapEnabled == MipMapEnabled && TextureIM.crunchedCompression == CrunchCompression && TextureIM.textureCompression == TextureCompression && TextureIM.streamingMipmaps == StreamingMipmaps)
+                                    {
+                                    }
+                                    else
+                                    {
+                                        TextureIM.crunchedCompression = CrunchCompression;
+                                        TextureIM.textureCompression = TextureCompression;
+                                        TextureIM.mipmapEnabled = MipMapEnabled;
+                                        if (TextureIM.maxTextureSize > TextureMaxSize)
+                                        {
+                                            TextureIM.maxTextureSize = TextureMaxSize;
+                                        }
+                                        TextureIM.streamingMipmaps = StreamingMipmaps;
+                                        Textures.Add(TextureIM);
+                                    }
+                                }
+#endif
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            TextureConvert(Textures.ToArray());
+            Textures.Clear();
+        }
+        /// <summary>
+        /// Converts Skinned mesh Renders
+        /// </summary>
+        public void ConvertSkinnedMeshRenders()
+        {
+            Textures.Clear();
+            SkinnedMeshRenderer[] Renders = FindObjectsOfType<SkinnedMeshRenderer>();
+            for (int RendersIndex = 0; RendersIndex < Renders.Length; RendersIndex++)
+            {
+                foreach (Object obj in EditorUtility.CollectDependencies(new UnityEngine.Object[] { Renders[RendersIndex] }))
+                {
+                    if (obj is Texture)
+                    {
+                        string path = AssetDatabase.GetAssetPath(obj);
+                        bool wasexisting = true;
+                        for (int LightIndex = 0; LightIndex < LightMapDirectories.Count; LightIndex++)
+                        {
+                            if (path == LightMapDirectories[LightIndex])
+                            {
+                                wasexisting = false;
+                            }
+                            if (path.Contains("BakeryLightmaps"))
+                            {
+                                wasexisting = false;
+                            }
+                        }
+                        if (wasexisting)
+                        {
+                            if (AssetImporter.GetAtPath(path) is TextureImporter)
+                            {
+                                TextureImporter TextureIM = (TextureImporter)AssetImporter.GetAtPath(path);
+                                if (TextureIM)
+                                {
+                                    if (!Textures.Contains(TextureIM))
+                                    {
+#if UNITY_2017
+                                        if (TextureIM.mipmapEnabled == MipMapEnabled && TextureIM.crunchedCompression == CrunchCompression && TextureIM.textureCompression == TextureCompression)
+                                        {
+                                        }
+                                        else
+                                        {
+                                            TextureIM.crunchedCompression = CrunchCompression;
+                                            TextureIM.textureCompression = TextureCompression;
+                                            TextureIM.mipmapEnabled = MipMapEnabled;
+                                            if (TextureIM.maxTextureSize > TextureMaxSize)
+                                            {
+                                                TextureIM.maxTextureSize = TextureMaxSize;
+                                            }
+                                            Textures.Add(TextureIM);
+
+                                        }
+                                    }
+#else
+                                    if (TextureIM.mipmapEnabled == MipMapEnabled && TextureIM.crunchedCompression == CrunchCompression && TextureIM.textureCompression == TextureCompression && TextureIM.streamingMipmaps == StreamingMipmaps)
+                                    {
+                                    }
+                                    else
+                                    {
+                                        TextureIM.crunchedCompression = CrunchCompression;
+                                        TextureIM.textureCompression = TextureCompression;
+                                        TextureIM.mipmapEnabled = MipMapEnabled;
+                                        if (TextureIM.maxTextureSize > TextureMaxSize)
+                                        {
+                                            TextureIM.maxTextureSize = TextureMaxSize;
+                                        }
+                                        TextureIM.streamingMipmaps = StreamingMipmaps;
+                                        Textures.Add(TextureIM);
+                                    }
+                                }
+#endif
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            TextureConvert(Textures.ToArray());
+            Textures.Clear();
+        }
+        /// <summary>
+        /// Scene Render 
+        /// </summary>
+        public void SceneRender()
+        {
+           Material Skybox = RenderSettings.skybox;
+            foreach (Object obj in EditorUtility.CollectDependencies(new UnityEngine.Object[] { Skybox }))
+            {
+                if (obj is Texture)
+                {
+                    string path = AssetDatabase.GetAssetPath(obj);
+                    if (AssetImporter.GetAtPath(path) is TextureImporter)
+                    {
+                        TextureImporter TextureIM = (TextureImporter)AssetImporter.GetAtPath(path);
+                        if (TextureIM)
+                        {
+                            if (!Textures.Contains(TextureIM))
+                            {
+#if UNITY_2017
+                                if (TextureIM.mipmapEnabled == MipMapEnabled && TextureIM.crunchedCompression == CrunchCompression && TextureIM.textureCompression == TextureCompression)
+                                {
+                                }
+                                else
+                                {
+                                    TextureIM.crunchedCompression = CrunchCompression;
+                                    TextureIM.textureCompression = TextureCompression;
+                                    TextureIM.mipmapEnabled = MipMapEnabled;
+                                    if (TextureIM.maxTextureSize > TextureMaxSize)
+                                    {
+                                        TextureIM.maxTextureSize = TextureMaxSize;
+                                    }
+                                    Textures.Add(TextureIM);
+
+                                }
+                            }
+#else
+                                    if (TextureIM.mipmapEnabled == MipMapEnabled && TextureIM.crunchedCompression == CrunchCompression && TextureIM.textureCompression == TextureCompression && TextureIM.streamingMipmaps == StreamingMipmaps)
+                                    {
+                                    }
+                                    else
+                                    {
+                                        TextureIM.crunchedCompression = CrunchCompression;
+                                        TextureIM.textureCompression = TextureCompression;
+                                        TextureIM.mipmapEnabled = MipMapEnabled;
+                                        if (TextureIM.maxTextureSize > TextureMaxSize)
+                                        {
+                                            TextureIM.maxTextureSize = TextureMaxSize;
+                                        }
+                                        TextureIM.streamingMipmaps = StreamingMipmaps;
+                                        Textures.Add(TextureIM);
+                                    }
+                                }
+#endif
+                        }
+                    }
+                }
+            }
+            TextureConvert(Textures.ToArray());
+            Textures.Clear();
+        }
+        /// <summary>
+        /// Texture Convert
+        /// </summary>
+        /// <param name="Textures"></param>
+        public void TextureConvert(TextureImporter[] Textures)
+        {
             foreach (TextureImporter Texture in Textures)
             {
                 if (Texture)
@@ -164,7 +437,6 @@ namespace BattlePhaze.TextureSystem.EditorUnity
                     Texture.SaveAndReimport();
                 }
             }
-            Textures.Clear();
         }
         /// <summary>
         /// UI Design
