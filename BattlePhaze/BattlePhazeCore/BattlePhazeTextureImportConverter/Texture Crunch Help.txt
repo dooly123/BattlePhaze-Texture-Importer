@@ -1,4 +1,4 @@
-Texture importer system can be found at
+Texture Cruncher system can be found at
 BattlePhaze/Auto Texture Convert
 
 Options as listed are
@@ -8,5 +8,5 @@ Texture max Size (the max size the image can be)
 Texture Compression (the compression method to use)
 https://docs.unity3d.com/540/Documentation/Manual/class-TextureImporter.html
 
-the system works by iterationing only over mesh renders textures.
+the system works by iterationing only over mesh renders textures and other types.
 note: some of the settings like texture max size are only triggered if the criteras are met, reference line 112

@@ -7,7 +7,7 @@ namespace BattlePhaze.TextureSystem.EditorUnity
     /// <summary>
     /// Texture System
     /// </summary>
-    public class BattlePhazeTextureEditor : EditorWindow
+    public class BattlePhazeTextureCruncher : EditorWindow
     {
         /// <summary>
         /// Textures Importer
@@ -49,7 +49,7 @@ namespace BattlePhaze.TextureSystem.EditorUnity
         [MenuItem("BattlePhaze/Auto Texture Convert")]
         static void TextureStreamConvert()
         {
-            BattlePhazeTextureEditor window = (BattlePhazeTextureEditor)EditorWindow.GetWindow(typeof(BattlePhazeTextureEditor));
+            BattlePhazeTextureCruncher window = (BattlePhazeTextureCruncher)EditorWindow.GetWindow(typeof(BattlePhazeTextureCruncher));
             window.Show();
         }
         /// <summary>
@@ -98,12 +98,12 @@ namespace BattlePhaze.TextureSystem.EditorUnity
                 IgnoreLightmaps();
                 ConvertSkinnedMeshRenders();
             }
-            if (GUILayout.Button("Convert Skybox [beta]", StyleButton))
+            if (GUILayout.Button("Convert Skybox", StyleButton))
             {
                 IgnoreLightmaps();
                 SceneRender();
             }
-            if (GUILayout.Button("Convert Particle System [Beta]", StyleButton))
+            if (GUILayout.Button("Convert Particle System", StyleButton))
             {
                 ParticleConvert();
             }
